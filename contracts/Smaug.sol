@@ -1,14 +1,32 @@
-// SPDX-License-Identifier: LGPL-3.0
-pragma solidity ^0.8.28;
-import {BaseGuard} from "@safe-global/safe-contracts/contracts/base/GuardManager.sol";
-import {Enum} from "@safe-global/safe-contracts/contracts/common/Enum.sol";
+// SPDX-License-Identifier: Business Source License (BSL 1.1)
+/*
 
+This code uses parts of the OpenZeppelin/contracts & OpenZeppelin/contracts-upgradeable Libraries, which is distributed under the MIT License.
+
+
+NOTICE: This code is provided for introspection and on-chain distribution purposes only.
+
+This code is made publicly available for the sole purpose of allowing security researchers and other interested parties to review the code and for distribution via deployments initiated by Peeramid Labs through our designated on-chain distribution system. This availability does NOT grant any rights to use, modify, reproduce, distribute, or create derivative works of this code outside of deployments initiated by Peeramid Labs.
+
+Redistribution of this code is ONLY permitted through on-chain deployments initiated by Peeramid Labs. Any other form of redistribution is explicitly prohibited without explicit written permission from Peeramid Labs.
+
+Peeramid Labs provides this code "AS IS" and disclaims all warranties, express or implied, including, but not limited to, the implied warranties of merchantability and fitness for a particular purpose. In no event shall Peeramid Labs be liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, procurement of substitute goods or services; loss of use, data, or profits; or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort (including negligence or otherwise) arising in any way out of the use of this software, even if advised of the possibility of such damage.
+
+All rights are reserved. Any unauthorized use is strictly prohibited.
+
+// This license will convert to Apache 2.0 when deployed by Peeramid Labs on chain distribution system has deployed 10000 packages.
+
+For inquiries regarding licensing or permissions, please contact: contact@peeramid.xyz
+*/
+
+pragma solidity ^0.8.28;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {EIP712Upgradeable} from "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
 import {SignatureChecker} from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
+
 struct ScheduledUpdateTTL {
     uint256 createdAt;
     uint256 newValue;
@@ -55,28 +73,24 @@ struct ContractStorage {
     mapping(bytes32 txHash => PreApprovedTx preApprovedTx) preApprovedTxs;
 }
 
-interface ITreasuryGuard {
-    /**
-     * @notice Schedule a TTL update
-     * @param _ttl The new TTL
-     */
-    function scheduleTTLUpdate(uint256 _ttl) external;
+/**
+ * @title Smaug
+ * @author Peeramid labs
+ * @notice Smaug is a guard contract that protects the Safe from being drained by malicious contracts.
+ * Smaug (/smaʊɡ/) is a dragon and the main antagonist in J. R. R. Tolkien's 1937 novel The Hobbit, his treasure and the mountain he lives in being the goal of the quest.
+ * @custom:security-contact sirt@peeramid.xyz
+ */
+contract Smaug is OwnableUpgradeable, EIP712Upgradeable {
+    using EnumerableSet for EnumerableSet.AddressSet;
+    bytes32 public constant STORAGE_SLOT =
+        keccak256("com.timeismoney.guard.storage");
 
-    /**
-     * @notice Schedule a budget update
-     * @param asset The asset to update the budget for
-     * @param newPolicy The new policy
-     */
-    function scheduleBudgetUpdate(
-        address asset,
-        Policy memory newPolicy
-    ) external;
-
-    /**
-     * @notice Pre-approve a transaction
-     * @param txHash The hash of the transaction
-     */
-    function preApproveTx(bytes32 txHash) external;
+    function getStorage() internal pure returns (ContractStorage storage s) {
+        bytes32 slot = STORAGE_SLOT;
+        assembly {
+            s.slot := slot
+        }
+    }
 
     event TTLSet(uint256 oldTTL, uint256 newTTL);
     event AssetProtectionUpdated(
@@ -100,31 +114,6 @@ interface ITreasuryGuard {
         uint256 inTotal
     );
     event TxApproved(bytes32 txHash, uint256 timestamp);
-}
-
-/**
- * @title Smaug
- * @author Peeramid labs
- * @notice Smaug is a guard contract that protects the Safe from being drained by malicious contracts.
- * Smaug (/smaʊɡ/) is a dragon and the main antagonist in J. R. R. Tolkien's 1937 novel The Hobbit, his treasure and the mountain he lives in being the goal of the quest.
- * @custom:security-contact sirt@peeramid.xyz
- */
-contract Smaug is
-    ITreasuryGuard,
-    BaseGuard,
-    OwnableUpgradeable,
-    EIP712Upgradeable
-{
-    using EnumerableSet for EnumerableSet.AddressSet;
-    bytes32 public constant STORAGE_SLOT =
-        keccak256("com.timeismoney.guard.storage");
-
-    function getStorage() internal pure returns (ContractStorage storage s) {
-        bytes32 slot = STORAGE_SLOT;
-        assembly {
-            s.slot := slot
-        }
-    }
 
     function preApproveTx(bytes32 txHash) external onlyOwner {
         ContractStorage storage s = getStorage();
@@ -135,7 +124,12 @@ contract Smaug is
         emit TxApproved(txHash, block.timestamp);
     }
 
-    function scheduleBudgetUpdate(
+    /**
+     * @notice Schedule a policy update on a protected asset
+     * @param asset The asset to update the policy for
+     * @param newPolicy The new policy
+     */
+    function schedulePolicyUpdate(
         address asset,
         Policy memory newPolicy
     ) external onlyOwner {
@@ -155,23 +149,35 @@ contract Smaug is
         );
     }
 
-    function setTTL(uint256 _ttl) external onlyOwner {
-        ContractStorage storage s = getStorage();
-        emit TTLSet(s.ttl, _ttl);
-        s.ttl = _ttl;
-    }
-
+    /**
+     * @notice Initialize the contract
+     * @param _owner The owner of the contract
+     * @param _ttl The TTL for the contract
+     * @param safe The Safe contract address
+     * @param assets The assets to protect
+     * @param policies The policies for the assets
+     */
     function initialize(
         address _owner,
         uint256 _ttl,
-        address safe
+        address safe,
+        address[] memory assets,
+        Policy[] memory policies
     ) public initializer {
         __Ownable_init(_owner);
         ContractStorage storage s = getStorage();
         s.ttl = _ttl;
         s.safe = safe;
+        for (uint256 i = 0; i < assets.length; i++) {
+            s.assetProtection[assets[i]].rates = policies[i];
+            s.assetsList.add(assets[i]);
+        }
     }
 
+    /**
+     * @notice Schedule a TTL update
+     * @param _ttl The new TTL
+     */
     function scheduleTTLUpdate(uint256 _ttl) external onlyOwner {
         ContractStorage storage s = getStorage();
         require(
@@ -191,6 +197,11 @@ contract Smaug is
         );
     }
 
+    /**
+     * @notice Get the day number from a timestamp
+     * @param timestamp The timestamp
+     * @return The day number
+     */
     function dayFromTimestamp(
         uint256 timestamp
     ) internal pure returns (uint256) {
@@ -201,9 +212,20 @@ contract Smaug is
     error NotMySafe();
     error DailyBudgetExceeded(uint256 attemptedSpent, uint256 allowedRate);
     error BlockBudgetExceeded(uint256 attemptedSpent, uint256 allowedRate);
-    error TxBudgetExceeded(uint256 attemptedSpent, uint256 allowedRate);
+    error TxBudgetExceeded(
+        uint256 attemptedSpent,
+        uint256 allowedRate,
+        bytes32 txHash
+    );
     error TotalBudgetExceeded(uint256 attemptedSpent, uint256 allowedRate);
 
+    /**
+     * @notice Check the daily budget
+     * @param assetGuard The asset guard
+     * @param balanceAfter The balance after the transaction
+     * @param balanceBefore The balance before the transaction
+     * @param dayNumber The day number
+     */
     function dailyCheck(
         AssetGuard storage assetGuard,
         uint256 balanceAfter,
@@ -224,6 +246,12 @@ contract Smaug is
         }
     }
 
+    /**
+     * @notice Check the block budget
+     * @param assetGuard The asset guard
+     * @param balanceAfter The balance after the transaction
+     * @param balanceBefore The balance before the transaction
+     */
     function blockCheck(
         AssetGuard storage assetGuard,
         uint256 balanceAfter,
@@ -243,6 +271,13 @@ contract Smaug is
         }
     }
 
+    /**
+     * @notice Check the transaction budget
+     * @param assetGuard The asset guard
+     * @param balanceAfter The balance after the transaction
+     * @param balanceBefore The balance before the transaction
+     * @param txHash The transaction hash
+     */
     function txCheck(
         AssetGuard storage assetGuard,
         uint256 balanceAfter,
@@ -257,12 +292,19 @@ contract Smaug is
                     assetGuard.rates.inTX,
                 TxBudgetExceeded(
                     assetGuard.budgetTracker.txValue[txHash],
-                    assetGuard.rates.inTX
+                    assetGuard.rates.inTX,
+                    txHash
                 )
             );
         }
     }
 
+    /**
+     * @notice Check the total budget
+     * @param assetGuard The asset guard
+     * @param balanceAfter The balance after the transaction
+     * @param balanceBefore The balance before the transaction
+     */
     function totalCheck(
         AssetGuard storage assetGuard,
         uint256 balanceAfter,
@@ -281,6 +323,12 @@ contract Smaug is
         }
     }
 
+    /**
+     * @notice Check the asset
+     * @param asset The asset
+     * @param assetGuard The asset guard
+     * @param txHash The transaction hash
+     */
     function checkAsset(
         address asset,
         AssetGuard storage assetGuard,
@@ -297,6 +345,12 @@ contract Smaug is
         totalCheck(assetGuard, balanceAfter, balanceBefore);
     }
 
+    /**
+     * @notice Perform the updates
+     * @param asset The asset
+     * @param assetGuard The asset guard
+     * @param s The contract storage
+     */
     function performUpdates(
         address asset,
         AssetGuard storage assetGuard,
@@ -304,7 +358,7 @@ contract Smaug is
     ) private {
         if (assetGuard.updateScheduled) {
             ScheduledUpdate memory update = s.scheduledUpdates[asset];
-            if (block.timestamp >= update.createdAt) {
+            if (block.timestamp - update.createdAt > s.ttl) {
                 assetGuard.rates = update.newPolicy;
                 assetGuard.updateScheduled = false;
                 update.createdAt = 0;
@@ -313,6 +367,10 @@ contract Smaug is
         }
     }
 
+    /**
+     * @notice Update the TTL
+     * @param s The contract storage
+     */
     function updateTTL(ContractStorage storage s) private {
         if (s.scheduledUpdateTTL.createdAt != 0) {
             if (block.timestamp - s.scheduledUpdateTTL.createdAt > s.ttl) {
@@ -323,6 +381,11 @@ contract Smaug is
         }
     }
 
+    /**
+     * @notice Run the asset protection
+     * @param s The contract storage
+     * @param txHash The transaction hash
+     */
     function runAssetProtection(
         ContractStorage storage s,
         bytes32 txHash
@@ -337,6 +400,10 @@ contract Smaug is
         }
     }
 
+    /**
+     * @notice Update the balances before execution
+     * @param s The contract storage
+     */
     function updateBalancesBeforeExecution(ContractStorage storage s) private {
         address[] memory assets = s.assetsList.values();
         for (uint256 i = 0; i < assets.length; i++) {
@@ -348,11 +415,13 @@ contract Smaug is
         }
     }
 
+    // Gnosis Safe Guardian Interface specified at
+    // https://docs.safe.global/advanced/smart-account-guards/smart-account-guard-tutorial
     function checkTransaction(
         address /*to*/,
         uint256 /*value*/,
         bytes memory /*data*/,
-        Enum.Operation operation,
+        uint8 operation,
         uint256 /*safeTxGas*/,
         uint256 /*baseGas*/,
         uint256 /*gasPrice*/,
@@ -363,7 +432,7 @@ contract Smaug is
     ) external {
         // Safe contracts call guards at soft implementation code, not on proxy level
         // Therefore sufficient level of protection is only available by disallowing delegatecall
-        if (operation == Enum.Operation.DelegateCall) {
+        if (operation == 1) {
             revert DelegatecallNotAllowed();
         }
 
@@ -372,6 +441,8 @@ contract Smaug is
         updateBalancesBeforeExecution(s);
     }
 
+    // Gnosis Safe Guardian Interface specified at
+    // https://docs.safe.global/advanced/smart-account-guards/smart-account-guard-tutorial
     function checkAfterExecution(bytes32 txHash, bool) external {
         ContractStorage storage s = getStorage();
         require(msg.sender == s.safe, NotMySafe());
@@ -383,6 +454,11 @@ contract Smaug is
         }
     }
 
+    /**
+     * @notice Add a protected asset
+     * @param asset The asset to protect
+     * @param policy The policy for the asset
+     */
     function addProtectedAsset(
         address asset,
         Policy memory policy
@@ -390,5 +466,21 @@ contract Smaug is
         ContractStorage storage s = getStorage();
         require(s.assetsList.add(asset), "Already protected");
         s.assetProtection[asset].rates = policy;
+    }
+
+    function supportsInterface(
+        bytes4 interfaceId
+    ) external view virtual returns (bool) {
+        return interfaceId == 0xe6d7a83a || interfaceId == 0x01ffc9a7;
+    }
+
+    function getTTL() external view returns (uint256) {
+        return getStorage().ttl;
+    }
+
+    function getAssetPolicy(
+        address asset
+    ) external view returns (Policy memory) {
+        return getStorage().assetProtection[asset].rates;
     }
 }
