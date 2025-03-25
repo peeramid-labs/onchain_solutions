@@ -31,7 +31,7 @@ Smaug uses a Time-To-Live (TTL) mechanism that affects several aspects of the co
 
 ### How TTL Works
 
-- **Definition**: TTL is a time period (in seconds) that determines how long various approvals and scheduled changes remain valid
+- **Definition**: TTL is a time period (in seconds) that determines how long it takes for various approvals and scheduled changes to become valid
 - **Default**: The TTL is set during contract initialization (typically 86400 seconds or 1 day)
 - **Scope**: The TTL value applies globally to all assets protected by the contract
 
@@ -52,7 +52,7 @@ smaug.scheduleTTLUpdate(43200); // Change TTL to 12 hours (43200 seconds)
 
 ### Important Notes
 
-- **Pre-approved transactions require maturity**: Pre-approved transactions bypass budget checks only after they have matured for the full TTL period.
+- **Pre-approved transactions require maturity**: The TTL acts as a maturity period for pre-approved transactions. When a transaction is pre-approved by hash, it is still subject to budget checks until the TTL period has passed. Only after this waiting period does it bypass budget checks.
 - **Pre-approvals mature after TTL period**: After the TTL period passes from when a transaction was pre-approved, that transaction becomes exempt from standard budget checks and limits.
 - **TTL is a mandatory waiting period**: For pre-approved transactions, TTL defines the minimum waiting period before the pre-approval takes effect and can bypass budget checks.
 - **All updates respect TTL**: Policy changes, TTL changes, and pre-approval maturity all follow the same time-based TTL mechanism.
@@ -63,7 +63,9 @@ Tests were conducted to verify the core functionality of the Smaug contract. Key
 1. ✅ **Budget Enforcement**: Successfully restricts transactions exceeding configured limits
 2. ✅ **Pre-approval Bypass**: Correctly allows pre-approved transactions to bypass budget checks
 3. ✅ **Pre-approval Expiration**: Pre-approved transactions correctly expire after the TTL period
-4. ✅ **Asset Protection**: Multiple assets can be protected with independent budgets
+4. ✅ **Pre-approval Revocation**: Pre-approval can be revoked before activation
+5. ✅ **Asset Protection**: Multiple assets can be protected with independent budgets
+6. ✅ **TTL Updates**: TTL updates are correctly applied after the TTL period
 
 ## Usage
 
