@@ -53,7 +53,7 @@ struct BudgetTracker {
 
 struct PreApprovedTx {
     bytes32 txHash;
-    uint256 timestamp;
+    uint256 createdAt;
 }
 
 struct AssetGuard {
@@ -113,13 +113,13 @@ contract Smaug is OwnableUpgradeable, EIP712Upgradeable {
         uint256 inTX,
         uint256 inTotal
     );
-    event TxApproved(bytes32 txHash, uint256 timestamp);
+    event TxApproved(bytes32 indexed txHash, uint256 indexed createdAt);
 
     function preApproveTx(bytes32 txHash) external onlyOwner {
         ContractStorage storage s = getStorage();
         s.preApprovedTxs[txHash] = PreApprovedTx({
             txHash: txHash,
-            timestamp: block.timestamp
+            createdAt: block.timestamp
         });
         emit TxApproved(txHash, block.timestamp);
     }
@@ -447,8 +447,8 @@ contract Smaug is OwnableUpgradeable, EIP712Upgradeable {
         ContractStorage storage s = getStorage();
         require(msg.sender == s.safe, NotMySafe());
         if (
-            s.preApprovedTxs[txHash].timestamp == 0 ||
-            block.timestamp - s.preApprovedTxs[txHash].timestamp > s.ttl
+            s.preApprovedTxs[txHash].createdAt == 0 ||
+            block.timestamp - s.preApprovedTxs[txHash].createdAt < s.ttl
         ) {
             runAssetProtection(s, txHash);
         }
@@ -468,19 +468,41 @@ contract Smaug is OwnableUpgradeable, EIP712Upgradeable {
         s.assetProtection[asset].rates = policy;
     }
 
+    /**
+     * @notice Supports the ERC165 interface
+     * @param interfaceId The interface ID
+     * @return True if the interface is supported
+     */
     function supportsInterface(
         bytes4 interfaceId
     ) external view virtual returns (bool) {
         return interfaceId == 0xe6d7a83a || interfaceId == 0x01ffc9a7;
     }
 
+    /**
+     * @notice Get the TTL
+     * @return The TTL
+     */
     function getTTL() external view returns (uint256) {
         return getStorage().ttl;
     }
 
+    /**
+     * @notice Get the asset policy
+     * @param asset The asset
+     * @return The policy
+     */
     function getAssetPolicy(
         address asset
     ) external view returns (Policy memory) {
         return getStorage().assetProtection[asset].rates;
+    }
+
+    /**
+     * @notice Revoke a pre-approved transaction
+     * @param txHash The transaction hash
+     */
+    function revokePreApprovedTx(bytes32 txHash) external onlyOwner {
+        getStorage().preApprovedTxs[txHash] = PreApprovedTx(0, 0);
     }
 }

@@ -173,6 +173,34 @@ describe("Smaug", function () {
 
       await expect(smaug.preApproveTx(txHash)).to.emit(smaug, "TxApproved").withArgs(txHash, anyValue);
     });
+
+    it("should revoke a pre-approved transaction", async function () {
+      // Create a mock transaction hash
+      const txHash = ethers.keccak256(ethers.toUtf8Bytes("Transaction to revoke"));
+
+      // Pre-approve the transaction
+      await smaug.preApproveTx(txHash);
+
+      // Verify it's pre-approved by simulating a large transfer that would normally fail
+      await smaug.connect(safeSigner).checkTransaction(mockERC20.target, 0, "0x", 0, 0, 0, 0, ethers.ZeroAddress, ethers.ZeroAddress, "0x", ethers.ZeroAddress);
+      await mockERC20.connect(safeSigner).transfer(owner, ethers.parseEther("5000"));
+
+      // Fast forward past TTL to allow the pre-approval to mature
+      await time.increase(86401); // Just over 1 day
+
+      // This would succeed with a matured pre-approval (skip actual execution to avoid state conflicts)
+
+      // Now revoke the pre-approval
+      await smaug.revokePreApprovedTx(txHash);
+
+      // Try to execute the transaction again - should fail now that approval is revoked
+      // We need to do another transfer since the previous one already happened
+      await smaug.connect(safeSigner).checkTransaction(mockERC20.target, 0, "0x", 0, 0, 0, 0, ethers.ZeroAddress, ethers.ZeroAddress, "0x", ethers.ZeroAddress);
+      await mockERC20.connect(safeSigner).transfer(owner, ethers.parseEther("5000"));
+
+      // Should fail because approval was revoked
+      await expect(smaug.connect(safeSigner).checkAfterExecution(txHash, true)).to.be.revertedWithCustomError(smaug, "DailyBudgetExceeded");
+    });
   });
 
   describe("Guard Functions", function () {
@@ -387,7 +415,7 @@ describe("Smaug", function () {
       await smaug.connect(safeSigner).checkAfterExecution(biggerTxHash, true);
     });
 
-    it("should bypass budget checks for pre-approved transactions within TTL", async function () {
+    it("should enforce budget checks for newly pre-approved transactions within TTL", async function () {
       // Create a transaction hash and pre-approve it
       const txHash = ethers.keccak256(ethers.toUtf8Bytes("Large transfer"));
       await smaug.preApproveTx(txHash);
@@ -395,19 +423,19 @@ describe("Smaug", function () {
       // Simulate transaction exceeding normal limits
       await smaug.connect(safeSigner).checkTransaction(mockERC20.target, 0, "0x", 0, 0, 0, 0, ethers.ZeroAddress, ethers.ZeroAddress, "0x", ethers.ZeroAddress);
 
-      // Simulate large transfer that would normally exceed limits
+      // Simulate large transfer that would exceed limits
       await mockERC20.connect(safeSigner).transfer(owner, ethers.parseEther("5000"));
 
-      // Should not revert because it's pre-approved
-      await smaug.connect(safeSigner).checkAfterExecution(txHash, true);
+      // Should revert because it's newly pre-approved (within TTL)
+      await expect(smaug.connect(safeSigner).checkAfterExecution(txHash, true)).to.be.revertedWithCustomError(smaug, "DailyBudgetExceeded");
     });
 
-    it("should enforce budget checks for pre-approved transactions after TTL", async function () {
+    it("should bypass budget checks for pre-approved transactions after TTL", async function () {
       // Create a transaction hash and pre-approve it
-      const txHash = ethers.keccak256(ethers.toUtf8Bytes("Expired large transfer"));
+      const txHash = ethers.keccak256(ethers.toUtf8Bytes("Aged pre-approval"));
       await smaug.preApproveTx(txHash);
 
-      // Fast forward past TTL
+      // Fast forward past TTL to allow the pre-approval to mature
       await time.increase(86401); // Just over 1 day
 
       // Simulate transaction setup
@@ -416,9 +444,8 @@ describe("Smaug", function () {
       // Simulate large transfer
       await mockERC20.connect(safeSigner).transfer(owner, ethers.parseEther("5000"));
 
-      // Should now revert because pre-approval expired (exceeded TTL)
-      // Any of the budget errors could be thrown depending on implementation
-      await expect(smaug.connect(safeSigner).checkAfterExecution(txHash, true)).to.be.revertedWithCustomError(smaug, "DailyBudgetExceeded");
+      // Should not revert because pre-approval has matured (exceeded TTL)
+      await smaug.connect(safeSigner).checkAfterExecution(txHash, true);
     });
   });
 
@@ -502,24 +529,54 @@ describe("Smaug", function () {
       }
     });
 
-    it("should bypass checks with pre-approval", async function () {
+    it("should bypass checks with pre-approval after TTL period", async function () {
       // Create a transaction hash
       const txHash = ethers.keccak256(ethers.toUtf8Bytes("Pre-approved budget test"));
 
       console.log("\nPre-approving transaction");
       await smaug.preApproveTx(txHash);
 
+      // We need to wait for the TTL period to pass for the pre-approval to take effect
+      console.log("Fast-forwarding past TTL period to allow pre-approval to mature");
+      await time.increase(86401); // Just over 1 day
+
       // Call the checkTransaction function
       await smaug.connect(safeSigner).checkTransaction(mockERC20.target, 0, "0x", 0, 0, 0, 0, ethers.ZeroAddress, ethers.ZeroAddress, "0x", ethers.ZeroAddress);
 
       // Make a transfer above the transaction limit
-      console.log("Transferring 60 tokens (above TX limit of 50) but pre-approved");
+      console.log("Transferring 60 tokens (above TX limit of 50) with matured pre-approval");
       await mockERC20.connect(safeSigner).transfer(owner, ethers.parseEther("60"));
 
-      // This should succeed because the transaction is pre-approved
+      // This should succeed because the transaction is pre-approved and TTL period has passed
       console.log("Calling checkAfterExecution");
       await smaug.connect(safeSigner).checkAfterExecution(txHash, true);
-      console.log("Transaction succeeded as expected with pre-approval");
+      console.log("Transaction succeeded as expected with matured pre-approval");
+    });
+
+    it("should enforce checks with new pre-approval within TTL period", async function () {
+      // Create a transaction hash
+      const txHash = ethers.keccak256(ethers.toUtf8Bytes("New pre-approved budget test"));
+
+      console.log("\nPre-approving transaction (new pre-approval, within TTL)");
+      await smaug.preApproveTx(txHash);
+
+      // Call the checkTransaction function immediately (no waiting)
+      await smaug.connect(safeSigner).checkTransaction(mockERC20.target, 0, "0x", 0, 0, 0, 0, ethers.ZeroAddress, ethers.ZeroAddress, "0x", ethers.ZeroAddress);
+
+      // Make a transfer above the transaction limit
+      console.log("Transferring 60 tokens (above TX limit of 50) with fresh pre-approval");
+      await mockERC20.connect(safeSigner).transfer(owner, ethers.parseEther("60"));
+
+      // This should fail because although pre-approved, the TTL waiting period hasn't passed
+      console.log("Calling checkAfterExecution");
+      try {
+        await smaug.connect(safeSigner).checkAfterExecution(txHash, true);
+        console.log("ERROR: Transaction succeeded when it should have failed!");
+        expect.fail("Transaction should have failed because pre-approval is too fresh");
+      } catch (error: any) {
+        console.log("Transaction correctly failed with error:", error.message);
+        expect(error.message).to.include("TxBudgetExceeded");
+      }
     });
   });
 });

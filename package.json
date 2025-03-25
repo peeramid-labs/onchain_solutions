@@ -4,7 +4,7 @@
   "description": "Safe guard plugin to sit on your gold",
   "main": "index.js",
   "scripts": {
-    "test": "export HH_ENVIRONMENT='test' && hardhat test"
+    "test": "hardhat test"
   },
   "keywords": [],
   "author": "",
