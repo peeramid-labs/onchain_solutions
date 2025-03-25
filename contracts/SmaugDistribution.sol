@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Business Source License (BSL 1.1)
+// NOTICE: See the NOTICE file for license and usage details.
 
 pragma solidity =0.8.28;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -16,11 +17,11 @@ interface SanctionsList {
 }
 
 /**
- * @title MAODistribution
- * @dev This contract implements the IDistribution and CodeIndexer interfaces. It uses the Clones library for address cloning.
- *
- * @notice The contract is responsible for creating and managing DAOs and Rankify distributions.
- * @author Peeramid Labs, 2024
+ * @title SmaugDistribution
+ * @author Peeramid Labs
+ * @notice This contract is used to distribute Smaug - a Safe Guardian plugin to enforce spending policies on a Gnosis Safe accounts.
+ * @dev this contract is part of Ethereum Distribution System (EDS) and can be used to obtain a copy of the Smaug contract.
+ * @custom:security-contact sirt@peeramid.xyz
  */
 contract SmaugDistribution is CloneDistribution, Ownable {
     event GratitudeSet(uint256 newGratitude);
