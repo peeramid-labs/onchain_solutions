@@ -164,6 +164,27 @@ describe("Smaug", function () {
 
       await expect(smaug.schedulePolicyUpdate(mockERC20Address, newPolicy)).to.emit(smaug, "ScheduledUpdateAssetProtection").withArgs(mockERC20Address, anyValue, newPolicy.inDay, newPolicy.inBlock, newPolicy.inTX, newPolicy.inTotal);
     });
+    it("should require proper policy values", async function () {
+      let invalidPolicy = {
+        inDay: ethers.parseEther("100"),
+        inBlock: ethers.parseEther("50"),
+        inTX: ethers.parseEther("0"),
+        inTotal: ethers.parseEther("1000"),
+      };
+
+      await expect(smaug.addProtectedAsset(mockERC20Address, invalidPolicy)).to.be.revertedWith("inTX must be greater than 0");
+      invalidPolicy.inTX = invalidPolicy.inBlock + 1n;
+      await expect(smaug.addProtectedAsset(mockERC20Address, invalidPolicy)).to.be.revertedWith("inBlock must be greater or equal to inTX");
+      invalidPolicy.inTX = ethers.parseEther("1");
+      invalidPolicy.inBlock = invalidPolicy.inDay + 1n;
+      await expect(smaug.addProtectedAsset(mockERC20Address, invalidPolicy)).to.be.revertedWith("inDay must be greater or equal to inBlock");
+      invalidPolicy.inDay = invalidPolicy.inTotal + 1n;
+      invalidPolicy.inBlock = ethers.parseEther("50");
+      await expect(smaug.addProtectedAsset(mockERC20Address, invalidPolicy)).to.be.revertedWith("inTotal must be greater or equal to inDay");
+      invalidPolicy.inDay = ethers.parseEther("100");
+      // should succeed
+      await expect(smaug.addProtectedAsset(mockERC20Address, invalidPolicy)).to.be.revertedWith("Already protected");
+    });
   });
 
   describe("Transaction Pre-approval", function () {
@@ -318,7 +339,7 @@ describe("Smaug", function () {
         inDay: ethers.parseEther("200"),
         inBlock: ethers.parseEther("200"),
         inTX: ethers.parseEther("200"),
-        inTotal: ethers.parseEther("100"), // Small total limit
+        inTotal: ethers.parseEther("300"), // Small total limit
       };
 
       await smaug.addProtectedAsset(mockERC20_2Address, smallTotalPolicy);
@@ -329,12 +350,13 @@ describe("Smaug", function () {
 
       // First transfer within limits
       await smaug.connect(safeSigner).checkTransaction(mockERC20_2.target, 0, "0x", 0, 0, 0, 0, ethers.ZeroAddress, ethers.ZeroAddress, "0x", ethers.ZeroAddress);
-      await mockERC20_2.connect(safeSigner).transfer(owner, ethers.parseEther("75"));
+      await mockERC20_2.connect(safeSigner).transfer(owner, ethers.parseEther("200"));
       await smaug.connect(safeSigner).checkAfterExecution(txHash1, true);
 
       // Second transfer exceeds total limit - NOT pre-approved
       await smaug.connect(safeSigner).checkTransaction(mockERC20_2.target, 0, "0x", 0, 0, 0, 0, ethers.ZeroAddress, ethers.ZeroAddress, "0x", ethers.ZeroAddress);
-      await mockERC20_2.connect(safeSigner).transfer(owner, ethers.parseEther("30"));
+      await time.increase(24 * 60 * 60);
+      await mockERC20_2.connect(safeSigner).transfer(owner, ethers.parseEther("200"));
       await expect(smaug.connect(safeSigner).checkAfterExecution(txHash2, true)).to.be.revertedWithCustomError(smaug, "TotalBudgetExceeded");
     });
 

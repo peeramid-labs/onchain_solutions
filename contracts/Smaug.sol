@@ -115,6 +115,7 @@ contract Smaug is OwnableUpgradeable, EIP712Upgradeable {
         address asset,
         Policy memory newPolicy
     ) external onlyOwner {
+        validatePolicy(newPolicy);
         ContractStorage storage s = getStorage();
         s.scheduledUpdates[asset] = ScheduledUpdate({
             createdAt: block.timestamp,
@@ -128,6 +129,22 @@ contract Smaug is OwnableUpgradeable, EIP712Upgradeable {
             newPolicy.inBlock,
             newPolicy.inTX,
             newPolicy.inTotal
+        );
+    }
+
+    function validatePolicy(Policy memory policy) private pure {
+        require(policy.inTX > 0, "inTX must be greater than 0");
+        require(
+            policy.inBlock >= policy.inTX,
+            "inBlock must be greater or equal to inTX"
+        );
+        require(
+            policy.inDay >= policy.inBlock,
+            "inDay must be greater or equal to inBlock"
+        );
+        require(
+            policy.inTotal >= policy.inDay,
+            "inTotal must be greater or equal to inDay"
         );
     }
 
@@ -150,7 +167,9 @@ contract Smaug is OwnableUpgradeable, EIP712Upgradeable {
         ContractStorage storage s = getStorage();
         s.ttl = _ttl;
         s.safe = safe;
+        require(_ttl > 0, "TTL must be greater than 0");
         for (uint256 i = 0; i < assets.length; i++) {
+            validatePolicy(policies[i]);
             s.assetProtection[assets[i]].rates = policies[i];
             s.assetsList.add(assets[i]);
         }
@@ -446,6 +465,7 @@ contract Smaug is OwnableUpgradeable, EIP712Upgradeable {
         Policy memory policy
     ) external onlyOwner {
         ContractStorage storage s = getStorage();
+        validatePolicy(policy);
         require(s.assetsList.add(asset), "Already protected");
         s.assetProtection[asset].rates = policy;
     }

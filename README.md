@@ -13,6 +13,17 @@ Smaug is a guard contract for [Safe](https://safe.global/) multi-signature walle
 - Transaction pre-approval mechanism
 - Time-locked policy updates
 - Support for ERC20 tokens and native ETH
+- End-of-transaction balance tracking (not intra-transaction monitoring)
+
+## Implementation Details
+
+### Balance Tracking Mechanism
+Smaug only monitors the **net balance change** at the end of transaction execution, not intermediate transfers during execution. This means:
+
+- Only the final token/ETH outflow is considered when checking budget limits
+- Internal transfers within a transaction can temporarily exceed budget limits
+- As long as the final balance after transaction execution is within budget limits, the transaction will not be restricted
+- This design allows for complex transactions with multiple internal transfers while still enforcing overall budget controls
 
 ## Time-To-Live (TTL) Mechanism
 
