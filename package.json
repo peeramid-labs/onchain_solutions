@@ -28,7 +28,7 @@
     "hardhat-abi-exporter": "^2.10.1",
     "hardhat-dependency-compiler": "^1.2.1",
     "hardhat-deploy": "^1.0.1",
-    "hardhat-gas-reporter": "^1.0.8",
+    "hardhat-gas-reporter": "^2.2.2",
     "solidity-coverage": "^0.8.0",
     "ts-node": ">=8.0.0",
     "typechain": "^8.3.0",

@@ -4,13 +4,13 @@ const func = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;
   const { deploy } = deployments;
 
-  const { deployer } = await getNamedAccounts();
+  const { deployer, USDC, DAO } = await getNamedAccounts();
 
   const result = await deploy("Smaug", {
     from: deployer,
     skipIfAlreadyDeployed: true,
   });
-  let usdcAddress = "";
+  let usdcAddress = USDC;
   console.log("Smaug deployed at", result.address);
   if (hre.network.name == "hardhat") {
     // deploy mock usdc
@@ -21,15 +21,12 @@ const func = async (hre: HardhatRuntimeEnvironment) => {
     });
     console.log("Mock USDC deployed at", mockUsdc.address);
     usdcAddress = mockUsdc.address;
-  } else {
-    if (!process.env.USDC_ADDRESS) throw new Error("USDC_ADDRESS is not set");
-    usdcAddress = process.env.USDC_ADDRESS;
   }
 
   const result2 = await deploy("SmaugDistribution", {
     from: deployer,
     skipIfAlreadyDeployed: true,
-    args: [result.address, ethers.encodeBytes32String("SmaugDistribution"), 1, usdcAddress, deployer, deployer],
+    args: [result.address, ethers.encodeBytes32String("SmaugDistribution"), 1, USDC, DAO, DAO],
   });
 
   console.log("SmaugDistribution deployed at", result2.address);
