@@ -31,6 +31,9 @@ const config: HardhatUserConfig = {
     USDC: {
       mainnet: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
     },
+    sanctionsList: {
+      default: "0x40C57923924B5c5c5455c48D93317139ADDaC8fb",
+    },
     DAO: {
       default: "0x520E00225C4a43B6c55474Db44a4a44199b4c3eE",
       mainnet: "0x6A8bC26c8f67c7e9939fA4e164f6F4A4c34fFE54",

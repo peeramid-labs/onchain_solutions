@@ -45,8 +45,7 @@ contract SmaugDistribution is CloneDistribution, Ownable {
     ShortString private immutable _distributionName;
     uint256 private immutable _distributionVersion;
     address private immutable _usdc;
-    address constant SANCTIONS_CONTRACT =
-        0x40C57923924B5c5c5455c48D93317139ADDaC8fb;
+    address immutable SANCTIONS_CONTRACT;
     address private _dao;
 
     uint256 public gratitude = 200 * 10 ** 6; // 200 USDC
@@ -64,7 +63,8 @@ contract SmaugDistribution is CloneDistribution, Ownable {
         uint256 distributionVersion,
         address usdc,
         address owner,
-        address beneficiary
+        address beneficiary,
+        address sanctionsList
     ) Ownable(owner) {
         _smaug = smaug;
         require(smaug != address(0), "Smaug address is required");
@@ -72,6 +72,7 @@ contract SmaugDistribution is CloneDistribution, Ownable {
         _distributionVersion = distributionVersion;
         _usdc = usdc;
         _dao = beneficiary;
+        SANCTIONS_CONTRACT = sanctionsList;
     }
 
     /**
@@ -94,13 +95,17 @@ contract SmaugDistribution is CloneDistribution, Ownable {
             uint256 distributionVersion
         )
     {
+        require(
+            !SanctionsList(SANCTIONS_CONTRACT).isSanctioned(msg.sender),
+            "Sender is sanctioned"
+        );
         if (msg.sender != owner() && msg.sender != _dao)
             require(
                 IERC20(_usdc).transferFrom(msg.sender, _dao, gratitude),
                 "Transfer failed"
             );
 
-        (instances, distributionName, distributionVersion) = sources();
+        (instances, distributionName, distributionVersion) = _instantiate();
 
         InstantiateArguments memory args = abi.decode(
             data,
@@ -114,10 +119,6 @@ contract SmaugDistribution is CloneDistribution, Ownable {
             args.safe,
             args.assets,
             args.policies
-        );
-        require(
-            !SanctionsList(SANCTIONS_CONTRACT).isSanctioned(msg.sender),
-            "Sender is sanctioned"
         );
 
         emit SmaugInstantiated(address(newInstance), msg.sender, args);
