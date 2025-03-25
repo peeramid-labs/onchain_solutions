@@ -1,23 +1,5 @@
 // SPDX-License-Identifier: Business Source License (BSL 1.1)
-/*
 
-This code uses parts of the OpenZeppelin/contracts & OpenZeppelin/contracts-upgradeable Libraries, which is distributed under the MIT License.
-
-
-NOTICE: This code is provided for introspection and on-chain distribution purposes only.
-
-This code is made publicly available for the sole purpose of allowing security researchers and other interested parties to review the code and for distribution via deployments initiated by Peeramid Labs through our designated on-chain distribution system. This availability does NOT grant any rights to use, modify, reproduce, distribute, or create derivative works of this code outside of deployments initiated by Peeramid Labs.
-
-Redistribution of this code is ONLY permitted through on-chain deployments initiated by Peeramid Labs. Any other form of redistribution is explicitly prohibited without explicit written permission from Peeramid Labs.
-
-Peeramid Labs provides this code "AS IS" and disclaims all warranties, express or implied, including, but not limited to, the implied warranties of merchantability and fitness for a particular purpose. In no event shall Peeramid Labs be liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, procurement of substitute goods or services; loss of use, data, or profits; or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort (including negligence or otherwise) arising in any way out of the use of this software, even if advised of the possibility of such damage.
-
-All rights are reserved. Any unauthorized use is strictly prohibited.
-
-// This license will convert to Apache 2.0 when deployed by Peeramid Labs on chain distribution system has deployed 10000 packages on Ethereum Mainnet.
-
-For inquiries regarding licensing or permissions, please contact: contact@peeramid.xyz
-*/
 pragma solidity =0.8.28;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
