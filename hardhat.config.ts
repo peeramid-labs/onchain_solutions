@@ -1,3 +1,4 @@
+import { task, subtask } from "hardhat/config";
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import "@nomicfoundation/hardhat-chai-matchers";
@@ -5,6 +6,59 @@ import "hardhat-dependency-compiler";
 import "hardhat-abi-exporter";
 import "hardhat-gas-reporter";
 import "hardhat-deploy";
+import fs from "fs";
+import path from "path";
+import { ethers, Fragment } from "ethers";
+
+const getSuperInterface = (outputPath?: string) => {
+  let mergedArray: Fragment[] = [];
+  function readDirectory(directory: string) {
+    const files = fs.readdirSync(directory);
+
+    files.forEach((file) => {
+      const fullPath = path.join(directory, file);
+      if (fs.statSync(fullPath).isDirectory()) {
+        readDirectory(fullPath); // Recurse into subdirectories
+      } else if (path.extname(file) === ".json") {
+        const fileContents = require("./" + fullPath); // Load the JSON file
+        if (Array.isArray(fileContents)) {
+          mergedArray = mergedArray.concat(fileContents); // Merge the array from the JSON file
+        }
+      }
+    });
+  }
+  const originalConsoleLog = console.log;
+  readDirectory("./abi");
+  readDirectory("./node_modules/@peeramid-labs/eds/abi");
+  console.log = () => {}; // avoid noisy output
+  const result = new ethers.Interface(mergedArray);
+  if (outputPath) {
+    fs.writeFileSync(outputPath, JSON.stringify(result.format(true), null, 2));
+  }
+  console.log = originalConsoleLog;
+  return result;
+};
+
+task("getSuperInterface", "Prints the super interface of a contract")
+  .setAction(async (taskArgs: { outputPath: string }, hre) => {
+    const originalConsoleLog = console.log;
+    console.log = () => {};
+    const su = getSuperInterface(taskArgs.outputPath + "/super-interface.json");
+    let return_value: Record<string, string> = {};
+    Object.values(su.fragments.filter((x) => x.type === "function")).forEach((x) => {
+      return_value[x.format("sighash")] = x.format("minimal");
+    });
+    Object.values(su.fragments.filter((x) => x.type === "event")).forEach((x) => {
+      return_value[x.format("sighash")] = x.format("minimal");
+    });
+    Object.values(su.fragments.filter((x) => x.type === "error")).forEach((x) => {
+      return_value[x.format("sighash")] = x.format("minimal");
+    });
+    fs.writeFileSync(taskArgs.outputPath + "/signatures.json", JSON.stringify(return_value, null, 2));
+    console.log = originalConsoleLog;
+  })
+  .addParam("outputPath", "The path to the abi file");
+
 const config: HardhatUserConfig = {
   gasReporter: {
     currency: "USD",
@@ -84,6 +138,16 @@ const config: HardhatUserConfig = {
         deploy: "node_modules/@peeramid-labs/eds/deploy",
       },
     ],
+  },
+  abiExporter: {
+    path: "./abi",
+    runOnCompile: true,
+    clear: true,
+    format: "json",
+    // flat: true,
+    // only: [":ERC20$"],
+    spacing: 2,
+    pretty: false,
   },
 };
 

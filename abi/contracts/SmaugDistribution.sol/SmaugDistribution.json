@@ -1,0 +1,372 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "smaug",
+        "type": "address"
+      },
+      {
+        "internalType": "ShortString",
+        "name": "distributionName",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "distributionVersion",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "usdc",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "beneficiary",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "sanctionsList",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "codeId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "CodeNotFoundInIndex",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FailedDeployment",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "balance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "needed",
+        "type": "uint256"
+      }
+    ],
+    "name": "InsufficientBalance",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnableInvalidOwner",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "OwnableUnauthorizedAccount",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "newBeneficiary",
+        "type": "address"
+      }
+    ],
+    "name": "BeneficiarySet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "distributor",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address[]",
+        "name": "instances",
+        "type": "address[]"
+      }
+    ],
+    "name": "Distributed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newGratitude",
+        "type": "uint256"
+      }
+    ],
+    "name": "GratitudeSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "smaug",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "distributor",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "admin",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "ttl",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "safe",
+            "type": "address"
+          },
+          {
+            "internalType": "address[]",
+            "name": "assets",
+            "type": "address[]"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "inDay",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "inBlock",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "inTX",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "inTotal",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct Policy[]",
+            "name": "policies",
+            "type": "tuple[]"
+          }
+        ],
+        "indexed": false,
+        "internalType": "struct SmaugDistribution.InstantiateArguments",
+        "name": "args",
+        "type": "tuple"
+      }
+    ],
+    "name": "SmaugInstantiated",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "contractURI",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "get",
+    "outputs": [
+      {
+        "internalType": "address[]",
+        "name": "src",
+        "type": "address[]"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "name",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "version",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "gratitude",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
+    ],
+    "name": "instantiate",
+    "outputs": [
+      {
+        "internalType": "address[]",
+        "name": "instances",
+        "type": "address[]"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "distributionName",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "distributionVersion",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newBeneficiary",
+        "type": "address"
+      }
+    ],
+    "name": "setBeneficiary",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "newGratitude",
+        "type": "uint256"
+      }
+    ],
+    "name": "setGratitude",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

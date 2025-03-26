@@ -22,7 +22,7 @@ contract MockSafe {
                 assetAddress,
                 0,
                 "0x",
-                0,
+                Smaug.Operation.Call,
                 0,
                 0,
                 0,

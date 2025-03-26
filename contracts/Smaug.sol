@@ -415,13 +415,17 @@ contract Smaug is OwnableUpgradeable, EIP712Upgradeable {
         }
     }
 
+    enum Operation {
+        Call,
+        DelegateCall
+    }
     // Gnosis Safe Guardian Interface specified at
     // https://docs.safe.global/advanced/smart-account-guards/smart-account-guard-tutorial
     function checkTransaction(
         address /*to*/,
         uint256 /*value*/,
         bytes memory /*data*/,
-        uint8 operation,
+        Operation operation,
         uint256 /*safeTxGas*/,
         uint256 /*baseGas*/,
         uint256 /*gasPrice*/,
@@ -432,7 +436,7 @@ contract Smaug is OwnableUpgradeable, EIP712Upgradeable {
     ) external {
         // Safe contracts call guards at soft implementation code, not on proxy level
         // Therefore sufficient level of protection is only available by disallowing delegatecall
-        if (operation == 1) {
+        if (operation == Operation.DelegateCall) {
             revert DelegatecallNotAllowed();
         }
 

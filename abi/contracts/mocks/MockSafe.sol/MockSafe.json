@@ -1,0 +1,62 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "smaug",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "_smaug",
+    "outputs": [
+      {
+        "internalType": "contract Smaug",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "numberOfCalls",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "assetAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "imitateNumerousCalls",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "smaug",
+        "type": "address"
+      }
+    ],
+    "name": "setSmaug",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

@@ -1,0 +1,711 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "attemptedSpent",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "allowedRate",
+        "type": "uint256"
+      }
+    ],
+    "name": "BlockBudgetExceeded",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "attemptedSpent",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "allowedRate",
+        "type": "uint256"
+      }
+    ],
+    "name": "DailyBudgetExceeded",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "DelegatecallNotAllowed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidInitialization",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotInitializing",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotMySafe",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnableInvalidOwner",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "OwnableUnauthorizedAccount",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "attemptedSpent",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "allowedRate",
+        "type": "uint256"
+      }
+    ],
+    "name": "TotalBudgetExceeded",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "attemptedSpent",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "allowedRate",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "txHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "TxBudgetExceeded",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "inDay",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "inBlock",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "inTX",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "inTotal",
+        "type": "uint256"
+      }
+    ],
+    "name": "AssetProtectionUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [],
+    "name": "EIP712DomainChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "version",
+        "type": "uint64"
+      }
+    ],
+    "name": "Initialized",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "asset",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "ETA",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "inDay",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "inBlock",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "inTX",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "inTotal",
+        "type": "uint256"
+      }
+    ],
+    "name": "ScheduledUpdateAssetProtection",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "newTTL",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "ETA",
+        "type": "uint256"
+      }
+    ],
+    "name": "ScheduledUpdateTTLSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "oldTTL",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newTTL",
+        "type": "uint256"
+      }
+    ],
+    "name": "TTLSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "txHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "createdAt",
+        "type": "uint256"
+      }
+    ],
+    "name": "TxApproved",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "STORAGE_SLOT",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "asset",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "inDay",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "inBlock",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "inTX",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "inTotal",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct Policy",
+        "name": "policy",
+        "type": "tuple"
+      }
+    ],
+    "name": "addProtectedAsset",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "txHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "name": "checkAfterExecution",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      },
+      {
+        "internalType": "enum Smaug.Operation",
+        "name": "operation",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "address payable",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "checkTransaction",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "eip712Domain",
+    "outputs": [
+      {
+        "internalType": "bytes1",
+        "name": "fields",
+        "type": "bytes1"
+      },
+      {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "version",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "chainId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "verifyingContract",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "salt",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "extensions",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "asset",
+        "type": "address"
+      }
+    ],
+    "name": "getAssetPolicy",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "inDay",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "inBlock",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "inTX",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "inTotal",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct Policy",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getTTL",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_owner",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_ttl",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "safe",
+        "type": "address"
+      },
+      {
+        "internalType": "address[]",
+        "name": "assets",
+        "type": "address[]"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "inDay",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "inBlock",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "inTX",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "inTotal",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct Policy[]",
+        "name": "policies",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "txHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "preApproveTx",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "txHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "revokePreApprovedTx",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "asset",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "inDay",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "inBlock",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "inTX",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "inTotal",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct Policy",
+        "name": "newPolicy",
+        "type": "tuple"
+      }
+    ],
+    "name": "schedulePolicyUpdate",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_ttl",
+        "type": "uint256"
+      }
+    ],
+    "name": "scheduleTTLUpdate",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes4",
+        "name": "interfaceId",
+        "type": "bytes4"
+      }
+    ],
+    "name": "supportsInterface",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]
