@@ -4,7 +4,7 @@ const func = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;
   const { deploy } = deployments;
 
-  const { deployer, USDC, DAO, sanctionsList } = await getNamedAccounts();
+  const { deployer, USDC, DAO, sanctionsList, owner } = await getNamedAccounts();
 
   const result = await deploy("Smaug", {
     from: deployer,
@@ -33,7 +33,7 @@ const func = async (hre: HardhatRuntimeEnvironment) => {
   const result2 = await deploy("SmaugDistribution", {
     from: deployer,
     skipIfAlreadyDeployed: true,
-    args: [result.address, ethers.encodeBytes32String("SmaugDistribution"), 1, USDC, DAO, DAO, sanctionsListAddress],
+    args: [result.address, ethers.encodeBytes32String("SmaugDistribution"), 1, USDC, owner, DAO, sanctionsListAddress],
   });
 
   console.log("SmaugDistribution deployed at", result2.address);

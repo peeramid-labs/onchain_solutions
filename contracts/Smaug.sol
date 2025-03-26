@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Business Source License (BSL 1.1)
-// NOTICE: See the NOTICE file for license and usage details.
 
 pragma solidity ^0.8.28;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Business Source License (BSL 1.1)
-// NOTICE: See the NOTICE file for license and usage details.
 
 pragma solidity =0.8.28;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -11,6 +10,7 @@ import {ShortStrings, ShortString} from "@openzeppelin/contracts/utils/ShortStri
 import "@peeramid-labs/eds/src/abstracts/CloneDistribution.sol";
 import {Policy, Smaug} from "./Smaug.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 interface SanctionsList {
     function isSanctioned(address addr) external view returns (bool);
@@ -95,15 +95,32 @@ contract SmaugDistribution is CloneDistribution, Ownable {
             uint256 distributionVersion
         )
     {
-        require(
-            !SanctionsList(SANCTIONS_CONTRACT).isSanctioned(msg.sender),
-            "Sender is sanctioned"
-        );
-        if (msg.sender != owner() && msg.sender != _dao)
+        if (SANCTIONS_CONTRACT != address(0))
             require(
-                IERC20(_usdc).transferFrom(msg.sender, _dao, gratitude),
-                "Transfer failed"
+                !SanctionsList(SANCTIONS_CONTRACT).isSanctioned(msg.sender),
+                "Sender is sanctioned"
             );
+        if (msg.sender != owner() && msg.sender != _dao) {
+            uint256 daoShare = Math.mulDiv(gratitude, 30, 100);
+            uint256 developerShare = gratitude - daoShare;
+            require(
+                IERC20(_usdc).transferFrom(
+                    msg.sender,
+                    address(this),
+                    gratitude
+                ),
+                "Transfer to DAO failed"
+            );
+
+            require(
+                IERC20(_usdc).transfer(owner(), developerShare),
+                "Transfer to owner failed"
+            );
+            require(
+                IERC20(_usdc).transfer(_dao, daoShare),
+                "Transfer to DAO failed"
+            );
+        }
 
         (instances, distributionName, distributionVersion) = _instantiate();
 

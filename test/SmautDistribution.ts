@@ -41,7 +41,7 @@ describe("SmaugDistribution", function () {
       ethers.keccak256(ethers.toUtf8Bytes("Smaug")), // Convert string to bytes32
       1,
       await mockUSDC.getAddress(),
-      owner.address,
+      owner.address, // "DAO"
       user1.address, // beneficiary
       await mockSanctionsList.getAddress()
     );
@@ -119,10 +119,13 @@ describe("SmaugDistribution", function () {
 
       await mockUSDC.connect(user2).approve(await distributionContract.getAddress(), parseEther("1000"));
       const u1balance = await mockUSDC.balanceOf(user1.address);
+      const ownerBalance = await mockUSDC.balanceOf(owner.address);
       // Should succeed with gratitude payment
       await expect(distributionContract.connect(user2).instantiate(data)).to.not.be.reverted;
       const u1balance2 = await mockUSDC.balanceOf(user1.address);
-      expect(u1balance2).to.equal(u1balance + 200000000n);
+      expect(u1balance2).to.equal(u1balance + 60000000n);
+      const ownerBalance2 = await mockUSDC.balanceOf(owner.address);
+      expect(ownerBalance2).to.equal(ownerBalance + 140000000n);
     });
   });
 
