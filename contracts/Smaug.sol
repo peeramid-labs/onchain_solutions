@@ -419,6 +419,7 @@ contract Smaug is OwnableUpgradeable, EIP712Upgradeable {
         Call,
         DelegateCall
     }
+
     // Gnosis Safe Guardian Interface specified at
     // https://docs.safe.global/advanced/smart-account-guards/smart-account-guard-tutorial
     function checkTransaction(
@@ -481,7 +482,11 @@ contract Smaug is OwnableUpgradeable, EIP712Upgradeable {
     function supportsInterface(
         bytes4 interfaceId
     ) external view virtual returns (bool) {
-        return interfaceId == 0xe6d7a83a || interfaceId == 0x01ffc9a7;
+        // this way we ensure users cannot accidentally install this contract on a non supported safe (requires safe of version 1.4.1 or higher)
+        if (msg.sender == getStorage().safe) {
+            return interfaceId == 0xe6d7a83a || interfaceId == 0x01ffc9a7;
+        }
+        return false;
     }
 
     /**

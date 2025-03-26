@@ -250,6 +250,60 @@ describe("Smaug", function () {
       // Simulate the transaction execution check
       await simulateCheckAfterExecution(txHash);
     });
+
+    it("should only support interfaces when called by Safe", async function () {
+      // Test when called by Safe
+      const mockSafe = await ethers.deployContract("MockSafe", [smaug.target]);
+      await mockSafe.setSmaug(smaug.target);
+
+      // Deploy a new Smaug instance with the mock Safe
+      const SmaugFactory = await ethers.getContractFactory("Smaug");
+      const newSmaug = await SmaugFactory.deploy();
+
+      // Initialize with the mock Safe address
+      await newSmaug.initialize(
+        owner,
+        86400, // 1 day TTL
+        await mockSafe.getAddress(),
+        [mockERC20Address],
+        [
+          {
+            inDay: ethers.parseEther("1000"),
+            inBlock: ethers.parseEther("100"),
+            inTX: ethers.parseEther("50"),
+            inTotal: ethers.parseEther("10000"),
+          },
+        ]
+      );
+
+      // Get the signer for the mockSafe
+      const mockSafeSigner = await ethers.getSigner(await mockSafe.getAddress());
+
+      // Should support Guard interface (0xe6d7a83a) when called by Safe
+      expect(await newSmaug.connect(mockSafeSigner).supportsInterface("0xe6d7a83a")).to.be.true;
+
+      // Should support ERC165 interface (0x01ffc9a7) when called by Safe
+      expect(await newSmaug.connect(mockSafeSigner).supportsInterface("0x01ffc9a7")).to.be.true;
+
+      // Should not support other interfaces when called by Safe
+      expect(await newSmaug.connect(mockSafeSigner).supportsInterface("0x12345678")).to.be.false;
+
+      // Test when called by non-Safe address
+      expect(await newSmaug.connect(user1Signer).supportsInterface("0xe6d7a83a")).to.be.false;
+      expect(await newSmaug.connect(user1Signer).supportsInterface("0x01ffc9a7")).to.be.false;
+      expect(await newSmaug.connect(user1Signer).supportsInterface("0x12345678")).to.be.false;
+    });
+
+    it("should support the EIP-165 interface", async function () {
+      // Check support for Guard interface when called by Safe
+      expect(await smaug.connect(safeSigner).supportsInterface("0xe6d7a83a")).to.equal(true);
+      // Check support for EIP-165 when called by Safe
+      expect(await smaug.connect(safeSigner).supportsInterface("0x01ffc9a7")).to.equal(true);
+
+      // Verify it returns false when called by non-Safe address
+      expect(await smaug.connect(user1Signer).supportsInterface("0xe6d7a83a")).to.equal(false);
+      expect(await smaug.connect(user1Signer).supportsInterface("0x01ffc9a7")).to.equal(false);
+    });
   });
 
   describe("Budget Enforcement", function () {
@@ -260,13 +314,6 @@ describe("Smaug", function () {
       const blockLimitTxHash = ethers.keccak256(ethers.toUtf8Bytes(`Transfer 75000000000000000000 tokens`));
       await smaug.preApproveTx(dailyLimitTxHash);
       await smaug.preApproveTx(blockLimitTxHash);
-    });
-
-    it("should support the EIP-165 interface", async function () {
-      // Check support for Guard interface
-      expect(await smaug.supportsInterface("0xe6d7a83a")).to.equal(true);
-      // Check support for EIP-165
-      expect(await smaug.supportsInterface("0x01ffc9a7")).to.equal(true);
     });
 
     it("should enforce daily budget limits", async function () {
